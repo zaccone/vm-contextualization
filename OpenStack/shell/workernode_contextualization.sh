@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # customize/etc/motd
-echo 'Contextualized version of CerVM - ver. BETA' > /etc/motd
+echo 'OpenStack workernode' > /etc/motd
+
 
 # setup vim alias. Quite helpful in many cases
 /bin/touch /etc/profile.d/vi.sh
