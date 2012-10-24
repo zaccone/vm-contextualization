@@ -332,4 +332,4 @@ plugins=cernvm rootsshkeys
 organisations = cms
 repositories  = cms,grid
 eos-server = eoscms.cern.ch
-environment=CMS_SITECONFIG=EC2,CMS_ROOT=/opt/cms
+environment=CMS_LOCAL_SITE=T1_CH_CERN,CMS_ROOT=/opt/cms
