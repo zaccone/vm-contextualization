@@ -32,7 +32,7 @@ globals {
   host_dmax = 0 /*secs */
   cleanup_threshold = 300 /*secs */
   gexec = no
-  send_metadata_interval = 0 /*secs */
+  send_metadata_interval = 45 /*secs */
 }
 
 cluster {

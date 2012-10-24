@@ -8,16 +8,14 @@ echo 'Contextualized version of CerVM - ver. BETA' > /etc/motd
 echo "alias vim='vi'" > /etc/profile.d/vi.sh
 source /etc/profile.d/vi.sh
 
-# manually restart cvmfs daemon
-/etc/init.d/cvmfs stop
-/etc/init.d/cvmfs start
-
-
-# install ganglia, we will need it.
+# install ganglia, we will need it - until we use CernVM2.6 HEADNODE we must install gmond by hand.
 conary install ganglia
 
 # configure gmond (ganglia component) to register at the headnode and provide information 
 # about the host.
+
+HEADNODE='IP'
+MONITORINGNAME='NAME'
 cat<<EOF>/etc/gmond.conf
 /* This configuration is as close to 2.5.x default behavior as possible
    The values closely match ./gmond/metric.h definitions in 2.5.x */
@@ -33,11 +31,11 @@ globals {
   host_dmax = 0 /*secs */
   cleanup_threshold = 300 /*secs */
   gexec = no
-  send_metadata_interval = 0 /*secs */
+  send_metadata_interval = 45 /*secs */
 }
 
 cluster {
-  name = "LxCloud"
+  name = "${MONITORINGNAME}"
   owner = "CERN"
   latlong = "unknown"
   url = "unknown"
@@ -48,9 +46,9 @@ host {
 }
 
 udp_send_channel {
-  host = IP
+  host = ${HEADNODE}
   port = 8649
-  ttl = 1
+  ttl = 32
 }
 
 udp_recv_channel {
@@ -325,21 +323,19 @@ EOF
 sleep 1
 kill -HUP `pidof gmond`
 
-mkdir -p /data
 cd /cvmfs/cms.cern.ch # just to warm-up cvmfsd
-sleep 1
 
+#mkdir -p /data
 # Copy site config file and setup to use our squid server
-cd /cvmfs/cms.cern.ch/SITECONF/T1_CH_CERN/JobConfig/
-cp /cvmfs/cms.cern.ch/SITECONF/T1_CH_CERN/JobConfig/site-local-config.xml /data/
-sed -i -e 's/<frontier-connect>/<frontier-connect>\n       <proxy url="http:\/\/128.142.192.20:3128"\/>/g' /data/site-local-config.xml 
+#cd /cvmfs/cms.cern.ch/SITECONF/T1_CH_CERN/JobConfig/
+#cp /cvmfs/cms.cern.ch/SITECONF/T1_CH_CERN/JobConfig/site-local-config.xml /data/
+#sed -i -e 's/<frontier-connect>/<frontier-connect>\n       <proxy url="http:\/\/128.142.192.20:3128"\/>/g' /data/site-local-config.xml 
 
 ############################################################################
 [amiconfig]
-plugins=cernvm
+plugins=cernvm rootsshkeys
 [cernvm]
 organisations = cms
 repositories  = cms,grid
 eos-server = eoscms.cern.ch
 environment=CMS_SITECONFIG=EC2,CMS_ROOT=/opt/cms
-proxy = <IP>
