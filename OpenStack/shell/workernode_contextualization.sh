@@ -32,6 +32,7 @@ globals {
   host_dmax = 0 /*secs */
   cleanup_threshold = 300 /*secs */
   gexec = no
+  /* see: http://sourceforge.net/apps/trac/ganglia/wiki/FAQ */
   send_metadata_interval = 45 /*secs */
 }
 
@@ -323,14 +324,6 @@ EOF
 /etc/init.d/gmond start
 sleep 1
 kill -HUP `pidof gmond`
-
-cd /cvmfs/cms.cern.ch # just to warm-up cvmfsd
-
-#mkdir -p /data
-# Copy site config file and setup to use our squid server
-#cd /cvmfs/cms.cern.ch/SITECONF/T1_CH_CERN/JobConfig/
-#cp /cvmfs/cms.cern.ch/SITECONF/T1_CH_CERN/JobConfig/site-local-config.xml /data/
-#sed -i -e 's/<frontier-connect>/<frontier-connect>\n       <proxy url="http:\/\/128.142.192.20:3128"\/>/g' /data/site-local-config.xml 
 
 ############################################################################
 [amiconfig]
