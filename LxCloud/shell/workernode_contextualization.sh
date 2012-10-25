@@ -323,7 +323,7 @@ EOF
 /etc/init.d/gmond start
 sleep 1
 kill -HUP `pidof gmond`
-
+exit
 
 ############################################################################
 [amiconfig]

@@ -324,7 +324,7 @@ EOF
 /etc/init.d/gmond start
 sleep 1
 kill -HUP `pidof gmond`
-
+exit 0
 ############################################################################
 [amiconfig]
 plugins=cernvm rootsshkeys
