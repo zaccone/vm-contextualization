@@ -1,0 +1,40 @@
+#t machine is your central manager?
+
+CONDOR_HOST = xmasterhostx
+
+## Pool's short description
+
+CONDOR_IDS = xcondoridsx
+
+COLLECTOR_NAME = Personal Condor at $(FULL_HOSTNAME)
+COLLECTOR_HOST = xmasterhostx:20001
+##  When is this machine willing to start a job? 
+
+START = FALSE
+
+LOWPORT = 20000
+HIGHPORT = 24500
+##  When to suspend a job?
+
+SUSPEND = FALSE
+
+HOSTALLOW_WRITE = *
+HOSTALLOW_READ  = *
+##  When to nicely stop a job?
+##  (as opposed to killing it instantaneously)
+
+PREEMPT = FALSE
+#HOSTALLOW_NEGOTIATOR_SCHEDD = *
+#HOSTALLOW_CONFIG = *
+##  When to instantaneously kill a preempting job
+##  (e.g. if a job is in the pre-empting stage for too long)
+
+KILL = FALSE
+##  This macro determines what daemons the condor_master will start and keep its watchful eyes on.
+##  The list is a comma or space separated list of subsystem names
+
+#DAEMON_LIST =  COLLECTOR, MASTER, NEGOTIATOR, SCHEDD, STARTD
+DAEMON_LIST = COLLECTOR, MASTER, NEGOTIATOR, SCHEDD
+SEC_DAEMON_AUTHENTICATION = OPTIONAL
+SEC_DEFAULT_AUTHENTICATION = OPTIONAL
+
