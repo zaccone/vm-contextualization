@@ -21,78 +21,16 @@ sed -i "s/$GLOBAL_HOSTNAME/$GLOBAL_HOSTNAME.$DOMAIN/gi" /etc/hosts # condor, sor
 
 /bin/hostname $GLOBAL_HOSTNAME.$DOMAIN
 
-/etc/init.d/iptables stop
+/etc/init.d/iptables stop # should be reconfigured, not stopped
 
 cat<<EOF >>/etc/profile.d/cms.sh
 export CMS_LOCAL_SITE=$GLOBAL_CMS_LOCAL_SITE
 export LANG="C"
-export VO_CMS_SW_DIR='/srv/env'
+export VO_CMS_SW_DIR='/cvmfs/cms.cern.ch'
 export PATH=\$VO_SW_DIR:\$PATH
 export CMS_PATH=/cvmfs/cms.cern.ch
 EOF
 source /etc/profile.d/cms.sh
-
-mkdir -p /srv/env/cms.cern.ch
-cat<<EOF >>/srv/env/cms.cern.ch/cmsset_default.sh
-#!/bin/bash
-export PATH=/cvmfs/cms.cern.ch/common:/cvmfs/cms.cern.ch/bin:\$PATH
-if [ ! \$SCRAM_ARCH ]
-then
-    SCRAM_ARCH=slc5_amd64_gcc434
-    export SCRAM_ARCH
-fi
-here=/cvmfs/cms.cern.ch
-if [ "\$VO_CMS_SW_DIR" != ""  ] 
-then
-    here=\$VO_CMS_SW_DIR
-else
-    if [ "\$OSG_APP" != "" ]
-    then
-        here=\$OSG_APP/cmssoft/cms
-    fi
-fi
-if [ ! -d \$here/\${SCRAM_ARCH}/etc/profile.d ] 
-then
-    echo "Your shell is not able to find where cmsset_default.sh is located." 
-    echo "Either you have not set VO_CMS_SW_DIR or OSG_APP correctly"
-    echo "or SCRAM_ARCH is not set to a valid architecture."
-fi
-for pkg in `/bin/ls /etc/profile.d/ | grep 'S.*[.]sh'`
-do
-	source \$here/\${SCRAM_ARCH}/etc/profile.d/\$pkg
-done
-if [ ! \$CMS_PATH ]
-then
-    export CMS_PATH=\$here
-fi
-if [ ! \$CVSROOT ]
-then
-    CVSROOT=:gserver:cmssw.cvs.cern.ch:/local/reps/CMSSW
-    export CVSROOT
-fi
-
-export VO_CMS_SW_DIR=/cvmfs/cms.cern.ch
-EOF
-
-
-cat<<EOF >/srv/env/cms.cern.ch/cmsset_default.local
-#!/bin/sh
-if [ "root" = "cmsprd" ]
-then
-    export STAGE_SVCCLASS=cmsprod
-fi
-if [ -z \$PATH ]
-then
-    export PATH=/afs/cern.ch/cms/caf/scripts
-else
-    export PATH=/afs/cern.ch/cms/caf/scripts:\${PATH}
-fi
-if [ -z \$CVS_RSH ]
-then
-    export CVS_RSH=ssh
-fi
-
-EOF
 
 echo "Starting condor setup from the user-data script:"
 
@@ -363,9 +301,11 @@ GMOND_CONFIG_UDP_SEND_CHANNEL_TTL=32
 GMOND_CONFIG_UDP_RECV_CHANNEL=24501
 GMOND_CONFIG_TCP_ACCEPT_CHANNEL=24501
 
+GMOND_CONFIGURATION_FILE='/etc/gmond.conf'
+
 yum -y install ganglia-gmond.x86_64
 
-cat <<EOF >/etc/gmond.conf
+cat <<EOF >$GMOND_CONFIGURATION_FILE
 /* This configuration is as close to 2.5.x default behavior as possible
    The values closely match ./gmond/metric.h definitions in 2.5.x */
 globals {
