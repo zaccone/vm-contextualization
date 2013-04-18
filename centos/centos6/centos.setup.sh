@@ -182,7 +182,7 @@ echo "Configuring condor..."
 cat<<EOF >$CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG
 CONDOR_HOST = $CONDOR_CONFIG_MASTER
 COLLECTOR_HOST=$CONDOR_CONFIG_MASTER:$CONDOR_CONFIG_MASTER_PORT
-CONDOR_IDS = xcondoridsx
+CONDOR_IDS = `cat /etc/passwd | grep condor: | awk -F: '{ print $3"."$4}'`
 DAEMON_LIST = MASTER, STARTD
 CONDOR_ADMIN = $CONDOR_CONFIG_MASTER
 QUEUE_SUPER_USERS = root, condor
@@ -211,12 +211,6 @@ do
      useradd -m -s /sbin/nologin  cms${var} > /dev/null 2>&1
      echo "SLOT${var}_USER=cms${var}" >> $CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG
 done
-
-
-# grabs condor ID and Group ID from /etc/passwd
-ID_GID=`grep condor /etc/passwd | cut -d ':' -f 3-4`
-CONDOR_ID=`echo $ID_GID | awk '{split($0,a,":"); print a[1]}'`
-CONDOR_GID=`echo $ID_GID | awk '{split($0,a,":"); print a[2]}'`
 
 # Now that we know condor ID's, rewrite the initial configuration file
 sed -i s/xcondoridsx/$CONDOR_ID.$CONDOR_GID/gi  $CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG
