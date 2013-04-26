@@ -160,6 +160,8 @@ rm -f $CONDOR_REPO_FILE
 echo "Getting the new condor repo file:"
 wget $CONDOR_YUM_HTTP_ENDPOINT
 
+
+
 echo "Downloading Condor RPM from yum repository:"
 yum -y install condor.x86_64
 
@@ -216,6 +218,7 @@ done
 sed -i s/xcondoridsx/$CONDOR_ID.$CONDOR_GID/gi  $CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG
 
 cp $CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG /etc/condor/$CONDOR_LOCAL_CONFIG
+ln -s /etc/condor/$CONDOR_LOCAL_CONFIG /etc/condor/config.d/$CONDOR_LOCAL_CONFIG
 
 ############################################
 
