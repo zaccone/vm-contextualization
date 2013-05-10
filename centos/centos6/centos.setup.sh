@@ -27,10 +27,9 @@ source /etc/profile.d/cms.sh
 echo "Starting condor setup from the user-data script:"
 
 
+
 ##########################
 # CVMFS
-#####################################################################
-# CVMFS CONFIG VARIABLES
 #####################################################################
 CVMFS_CONFIG_REPOSITORIES='cms.cern.ch,grid.cern.ch'
 CVMFS_CONFIG_PROXY_ENDPOINT='DIRECT'
@@ -40,7 +39,6 @@ CVMFS_CONFIG_SERVER_URL='"http://cvmfs.fnal.gov:8000/opt/@org@;http://cvmfs.racf
 CVMFS_CONFIG_CMS_LOCAL_SITE='T2_CH_CERN_AI'
 
 CVMFS_LOCAL_FILE='/etc/cvmfs/default.local'
-#CVMFS_RPM_ENDPOINT='http://dl.fedoraproject.org/pub/epel/5/i386/epel-release-5-4.noarch.rpm'
 CVMFS_RPM_ENDPOINT='http://download.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm'
 CVMFS_RPM_OSG_ENDPOINT='http://repo.grid.iu.edu/osg-el6-release-latest.rpm'
 
@@ -111,129 +109,6 @@ EOF
 /sbin/service cvmfs restartautofs 
 sleep 5
 /sbin/service cvmfs restartclean
-
-
-#############################################################
-# CONDOR CONSTANS
-#############################################################
-
-CONDOR_TMP_DIR='/tmp/condor'
-CONDOR_LOCAL_CONFIG='condor_config.local'
-
-CONDOR_YUM_DIR_DEST="/etc/yum.repos.d"
-CONDOR_YUM_HTTP_ENDPOINT="http://www.cs.wisc.edu/condor/yum/repo.d/condor-stable-rhel6.repo"
-#CONDOR_YUM_HTTP_ENDPOINT="http://repo.grid.iu.edu/osg-el6-release-latest.rpm"
-CONDOR_REPO_FILE='condor-stable-rhel5.repo'
-
-
-CONDOR_CONFIG_MASTER='dashboard61.cern.ch'
-CONDOR_CONFIG_LOWPORT=20000
-CONDOR_CONFIG_HIGHPORT=24500
-CONDOR_CONFIG_MASTER_PORT=20001
-#############################################################
-
-if [ ! -d $CONDOR_TMP_DIR ]; then
-    /bin/mkdir -p $CONDOR_TMP_DIR;
-fi
-
-
-if [ "x$CONDOR_CONFIG_MASTER" == "x" ]; then
-	CONDOR_CONFIG_MASTER=`/bin/hostname`
-fi
-
-# Stop running condor daemons
-#service condor stop
-
-if [ $? -eq 0 ]; then
-	echo "Stopping running condor and removing old condor rpm package..."
-	pkill -f condor
-	old_condor_version=$(rpm -qa | grep condor)
-	rpm -e $old_condor_version
-else
-	echo "There isn't any previous condor installation in this machine. Proceeding to condor installation..."
-fi
-
-cd $CONDOR_YUM_DIR_DEST
-echo "Removing old condor repo file."
-rm -f $CONDOR_REPO_FILE
-
-echo "Getting the new condor repo file:"
-wget $CONDOR_YUM_HTTP_ENDPOINT
-
-
-
-echo "Downloading Condor RPM from yum repository:"
-yum -y install condor.x86_64
-
-PERL_MANIP=`yum list installed | grep -i perl-DateManip.noarch | wc -l`
-if [ $PERL_MANIP -eq 0 ]; then
-	yum -y install perl-DateManip.noarch
-fi
-
-# CONDOR INSTALL
-echo "Installing CONDOR $CONDOR_VERSION..."
-
-echo "Move all the default local configs to the backup directory"
-mkdir -p /etc/condor/backup/config.d
-mv -f /etc/condor/config.d/* /etc/condor/backup/config.d
-
-
-# Copying the condor config file the we wrote before to its final destination, so the configurations can be applied
-echo "Configuring condor..."
-
-cat<<EOF >$CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG
-CONDOR_HOST = $CONDOR_CONFIG_MASTER
-COLLECTOR_HOST=$CONDOR_CONFIG_MASTER:$CONDOR_CONFIG_MASTER_PORT
-CONDOR_IDS = `cat /etc/passwd | grep condor: | awk -F: '{ print $3"."$4}'`
-DAEMON_LIST = MASTER, STARTD
-CONDOR_ADMIN = $CONDOR_CONFIG_MASTER
-QUEUE_SUPER_USERS = root, condor
-HIGHPORT = $CONDOR_CONFIG_HIGHPORT
-LOWPORT = $CONDOR_CONFIG_LOWPORT
-UID_DOMAIN = $CONDOR_CONFIG_MASTER
-FILESYSTEM_DOMAIN = $CONDOR_CONFIG_MASTER
-ALLOW_WRITE = *
-STARTER_ALLOW_RUNAS_OWNER = False
-ALLOW_DAEMON=*
-HOSTALLOW_READ=*
-HOSTALLOW_WRITE=*
-SEC_DAEMON_AUTHENTICATION=OPTIONAL
-
-START=True
-SUSPEND = FALSE
-KILL = FALSE
-
-EOF
-###
-
-CPUS=`cat /proc/cpuinfo | grep processor | wc -l`
-
-for var in $(seq $CPUS)
-do
-     useradd -m -s /sbin/nologin  cms${var} > /dev/null 2>&1
-     echo "SLOT${var}_USER=cms${var}" >> $CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG
-done
-
-# Now that we know condor ID's, rewrite the initial configuration file
-sed -i s/xcondoridsx/$CONDOR_ID.$CONDOR_GID/gi  $CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG
-
-cp $CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG /etc/condor/$CONDOR_LOCAL_CONFIG
-ln -s /etc/condor/$CONDOR_LOCAL_CONFIG /etc/condor/config.d/$CONDOR_LOCAL_CONFIG
-
-############################################
-
-echo "Sourcing from /etc/profile.d/condor.sh..."
-echo "export PATH=${PATH}:/usr/bin:/sbin" >> /etc/profile.d/condor.sh
-echo "export CONDOR_CONFIG=/etc/condor/condor_config" >> /etc/profile.d/condor.sh
-
-source /etc/profile.d/condor.sh
-
-#Let's start Condor 
-echo "STARTING CONDOR:"
-/etc/init.d/condor start
-
-#### review script cause there's a mounting issue after the cvmfs setup ######
-
 
 ###########################
 # GANGLIA-GMOND
@@ -598,6 +473,131 @@ collection_group {
 EOF
 
 /etc/init.d/gmond start
+
+
+#############################################################
+# CONDOR CONSTANS
+#############################################################
+
+CONDOR_TMP_DIR='/tmp/condor'
+CONDOR_LOCAL_CONFIG='condor_config.local'
+
+CONDOR_YUM_DIR_DEST="/etc/yum.repos.d"
+CONDOR_YUM_HTTP_ENDPOINT="http://www.cs.wisc.edu/condor/yum/repo.d/condor-stable-rhel6.repo"
+#CONDOR_YUM_HTTP_ENDPOINT="http://repo.grid.iu.edu/osg-el6-release-latest.rpm"
+CONDOR_REPO_FILE='condor-stable-rhel5.repo'
+
+
+CONDOR_CONFIG_MASTER='dashboard61.cern.ch'
+CONDOR_CONFIG_LOWPORT=20000
+CONDOR_CONFIG_HIGHPORT=24500
+CONDOR_CONFIG_MASTER_PORT=20001
+#############################################################
+
+if [ ! -d $CONDOR_TMP_DIR ]; then
+    /bin/mkdir -p $CONDOR_TMP_DIR;
+fi
+
+
+if [ "x$CONDOR_CONFIG_MASTER" == "x" ]; then
+	CONDOR_CONFIG_MASTER=`/bin/hostname`
+fi
+
+# Stop running condor daemons
+#service condor stop
+
+if [ $? -eq 0 ]; then
+	echo "Stopping running condor and removing old condor rpm package..."
+	pkill -f condor
+	old_condor_version=$(rpm -qa | grep condor)
+	rpm -e $old_condor_version
+else
+	echo "There isn't any previous condor installation in this machine. Proceeding to condor installation..."
+fi
+
+cd $CONDOR_YUM_DIR_DEST
+echo "Removing old condor repo file."
+rm -f $CONDOR_REPO_FILE
+
+echo "Getting the new condor repo file:"
+wget $CONDOR_YUM_HTTP_ENDPOINT
+
+
+
+echo "Downloading Condor RPM from yum repository:"
+yum -y install condor.x86_64
+
+PERL_MANIP=`yum list installed | grep -i perl-DateManip.noarch | wc -l`
+if [ $PERL_MANIP -eq 0 ]; then
+	yum -y install perl-DateManip.noarch
+fi
+
+# CONDOR INSTALL
+echo "Installing CONDOR $CONDOR_VERSION..."
+
+echo "Move all the default local configs to the backup directory"
+mkdir -p /etc/condor/backup/config.d
+mv -f /etc/condor/config.d/* /etc/condor/backup/config.d
+
+
+# Copying the condor config file the we wrote before to its final destination, so the configurations can be applied
+echo "Configuring condor..."
+
+cat<<EOF >$CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG
+CONDOR_HOST = $CONDOR_CONFIG_MASTER
+COLLECTOR_HOST=$CONDOR_CONFIG_MASTER:$CONDOR_CONFIG_MASTER_PORT
+CONDOR_IDS = `cat /etc/passwd | grep condor: | awk -F: '{ print $3"."$4}'`
+DAEMON_LIST = MASTER, STARTD
+CONDOR_ADMIN = $CONDOR_CONFIG_MASTER
+QUEUE_SUPER_USERS = root, condor
+HIGHPORT = $CONDOR_CONFIG_HIGHPORT
+LOWPORT = $CONDOR_CONFIG_LOWPORT
+UID_DOMAIN = $CONDOR_CONFIG_MASTER
+FILESYSTEM_DOMAIN = $CONDOR_CONFIG_MASTER
+ALLOW_WRITE = *
+STARTER_ALLOW_RUNAS_OWNER = False
+ALLOW_DAEMON=*
+HOSTALLOW_READ=*
+HOSTALLOW_WRITE=*
+SEC_DAEMON_AUTHENTICATION=OPTIONAL
+
+START=True
+SUSPEND = FALSE
+KILL = FALSE
+
+EOF
+###
+
+CPUS=`cat /proc/cpuinfo | grep processor | wc -l`
+
+for var in $(seq $CPUS)
+do
+     useradd -m -s /sbin/nologin  cms${var} > /dev/null 2>&1
+     echo "SLOT${var}_USER=cms${var}" >> $CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG
+done
+
+# Now that we know condor ID's, rewrite the initial configuration file
+sed -i s/xcondoridsx/$CONDOR_ID.$CONDOR_GID/gi  $CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG
+
+cp $CONDOR_TMP_DIR/$CONDOR_LOCAL_CONFIG /etc/condor/$CONDOR_LOCAL_CONFIG
+ln -s /etc/condor/$CONDOR_LOCAL_CONFIG /etc/condor/config.d/$CONDOR_LOCAL_CONFIG
+
+############################################
+
+echo "Sourcing from /etc/profile.d/condor.sh..."
+echo "export PATH=${PATH}:/usr/bin:/sbin" >> /etc/profile.d/condor.sh
+echo "export CONDOR_CONFIG=/etc/condor/condor_config" >> /etc/profile.d/condor.sh
+
+source /etc/profile.d/condor.sh
+
+#Let's start Condor 
+echo "STARTING CONDOR:"
+/etc/init.d/condor start
+
+### Restart gmond
+
+/etc/init.d/gmond restart
+
 
 exit 0
 
