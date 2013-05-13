@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+
+import os
+import sys
+
+try:
+    import paramiko
+except ImportError:
+    print ("Cannot import paramiko library (https://github.com/paramiko/paramiko) ",
+                     "install and rerun %s" % sys.argv[0])
+
+
+__author__ = "Marek Denis <marek.denis@cern.ch>"
+__version__ = "BETA0.1"
+
+NAME = sys.argv[0]
+
+def usage():
+    print "Usage: %s <data file>" % NAME
+
+def fetch(filename): ## DON'T RETURN WHOLE ARRAY
+    with open(filename,'r') as fn:
+        return fn.readlines()
+
+def main():
+    try:
+        files,command = sys.argv[1:3]
+    except IndexError,ValueError:
+        return usage()
+
+    data = fetch(files)
+    for line in data:
+        if line.startswith('#'):
+            continue
+        host, passwd = line.split()
+        ssh = paramiko.SSHClient()
+        ssh.load_system_host_keys()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        print "Host: %s, passwd: %s" % (host, passwd)
+        try:
+            ssh.connect(host,username='root',password=passwd)
+            stdin,stdout,stderr = ssh.exec_command(command)
+            print stdout.read()
+        finally:
+            ssh.close()
+
+if __name__ == "__main__":
+    main()
+
