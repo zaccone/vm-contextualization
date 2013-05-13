@@ -6,7 +6,7 @@ import sys
 try:
     import paramiko
 except ImportError:
-    print ("Cannot import paramiko library (https://github.com/paramiko/paramiko) ",
+    print ("Cannot import paramiko library (https://github.com/paramiko/paramiko), ",
                      "install and rerun %s" % sys.argv[0])
 
 
@@ -18,9 +18,15 @@ NAME = sys.argv[0]
 def usage():
     print "Usage: %s <data file>" % NAME
 
-def fetch(filename): ## DON'T RETURN WHOLE ARRAY
-    with open(filename,'r') as fn:
-        return fn.readlines()
+def fetch(filename):
+    try:
+        with open(filename,'r') as fn:
+            for line in fn:
+                if line.startswith('#'):
+                    continue
+                yield line
+    except IOError,e:
+        print e
 
 def main():
     try:
@@ -28,19 +34,17 @@ def main():
     except IndexError,ValueError:
         return usage()
 
-    data = fetch(files)
-    for line in data:
-        if line.startswith('#'):
-            continue
+    for line in fetch(files):
         host, passwd = line.split()
         ssh = paramiko.SSHClient()
         ssh.load_system_host_keys()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-        print "Host: %s, passwd: %s" % (host, passwd)
         try:
             ssh.connect(host,username='root',password=passwd)
             stdin,stdout,stderr = ssh.exec_command(command)
             print stdout.read()
+        except paramiko.SSHException:
+            print "Cannot execute connection to host: %s, skipping" % (host,)
         finally:
             ssh.close()
 
