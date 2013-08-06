@@ -26,6 +26,14 @@ source /etc/profile.d/cms.sh
 
 echo "Starting condor setup from the user-data script:"
 
+## INSTALL TIME BINARY, jobs will very likely fail with the 127 Exit Code
+## if they dont find it.
+
+if [ ! -e /usr/bin/time ]; then
+    echo -n "/usr/bin/time was not found, installing..."
+    yum -y install time ;
+    echo "time installed";
+fi
 
 
 ##########################
