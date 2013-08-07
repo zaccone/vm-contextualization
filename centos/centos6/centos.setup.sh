@@ -6,7 +6,7 @@ echo "Starting condor setup from the user-data script:"
 ###########################
 # GLOBAL SETUP
 ###########################
-DOMAIN='t-systems.com'
+DOMAIN='atos.com'
 GLOBAL_HOSTNAME=`/bin/hostname`
 GLOBAL_CMS_LOCAL_SITE='T2_CH_CERN_AI'
 sed -i "s/$GLOBAL_HOSTNAME/$GLOBAL_HOSTNAME.$DOMAIN/gi" /etc/hosts # condor, sor some magic reason needs it....:(
@@ -491,7 +491,8 @@ CONDOR_TMP_DIR='/tmp/condor'
 CONDOR_LOCAL_CONFIG='condor_config.local'
 
 CONDOR_YUM_DIR_DEST="/etc/yum.repos.d"
-CONDOR_YUM_HTTP_ENDPOINT="http://www.cs.wisc.edu/condor/yum/repo.d/condor-stable-rhel6.repo"
+CONDOR_YUM_HTTP_ENDPOINT="http://research.cs.wisc.edu/htcondor/yum/repo.d/condor-stable-rhel6.repo"
+#CONDOR_YUM_HTTP_ENDPOINT="http://www.cs.wisc.edu/condor/yum/repo.d/condor-stable-rhel6.repo"
 #CONDOR_YUM_HTTP_ENDPOINT="http://repo.grid.iu.edu/osg-el6-release-latest.rpm"
 CONDOR_REPO_FILE='condor-stable-rhel5.repo'
 
@@ -533,12 +534,12 @@ wget $CONDOR_YUM_HTTP_ENDPOINT
 
 
 echo "Downloading Condor RPM from yum repository:"
-yum -y install condor.x86_64
+yum -y --disablerepo "osg" install condor.x86_64
 
-PERL_MANIP=`yum list installed | grep -i perl-DateManip.noarch | wc -l`
-if [ $PERL_MANIP -eq 0 ]; then
-	yum -y install perl-DateManip.noarch
-fi
+#PERL_MANIP=`yum list installed | grep -i perl-DateManip.noarch | wc -l`
+#if [ $PERL_MANIP -eq 0 ]; then
+#	yum -y install perl-DateManip.noarch
+#fi
 
 # CONDOR INSTALL
 echo "Installing CONDOR $CONDOR_VERSION..."
